@@ -5,12 +5,14 @@ import com.outfitly.outfit_recommender.entity.enums.Category;
 import com.outfitly.outfit_recommender.entity.enums.Color;
 import com.outfitly.outfit_recommender.entity.enums.Season;
 
+import java.util.List;
+
 public record ClothingResponseDto(
         Long id,
         String name,
         Category category,
         Color color,
-        Season season
+        List<Season> season
 ) {
     public static ClothingResponseDto fromEntity(Clothing clothing) {
         return new ClothingResponseDto(
@@ -18,7 +20,7 @@ public record ClothingResponseDto(
                 clothing.getName(),
                 clothing.getCategory(),
                 clothing.getColor(),
-                clothing.getSeason()
+                clothing.getSeasons()
         );
     }
 }

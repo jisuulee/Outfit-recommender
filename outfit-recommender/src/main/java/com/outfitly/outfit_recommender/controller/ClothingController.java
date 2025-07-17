@@ -14,6 +14,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/api/clothes")
 public class ClothingController {
+
     private final ClothingService clothingService;
 
     @PostMapping

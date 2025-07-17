@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+
 @Service
 @RequiredArgsConstructor
 public class ClothingService {
@@ -20,7 +21,7 @@ public class ClothingService {
                 .name(dto.name())
                 .category(dto.category())
                 .color(dto.color())
-                .season(dto.season())
+                .seasons(dto.seasons())
                 .userId(dto.userId())
                 .build();
         clothingRepository.save(clothing);
