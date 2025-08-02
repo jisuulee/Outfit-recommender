@@ -3,7 +3,6 @@ package com.outfitly.outfit_recommender.entity;
 import com.outfitly.outfit_recommender.entity.enums.Category;
 import com.outfitly.outfit_recommender.entity.enums.Color;
 import com.outfitly.outfit_recommender.entity.enums.Season;
-import com.outfitly.outfit_recommender.entity.enums.Style;
 import jakarta.persistence.*;
 import lombok.*;
 
