@@ -36,14 +36,18 @@ public class CoordinateService {
         String shoeStr = toCommaSeparated(shoes);
 
         return String.format("""
-            상의: %s
-            하의: %s
-            아우터: %s
-            신발: %s
-
-            %s룩으로 %s에 어울리는 옷 조합을 3개 추천해줘.
-            예시: [상의 - 흰 티셔츠, 하의 - 청바지, 신발 - 흰 스니커즈]
-            """, topStr, pantStr, outerStr, shoeStr, style, season);
+                    사용자가 가지고 있는 옷 목록:
+                    
+                        - 상의: %s
+                        - 하의: %s
+                        - 아우터: %s
+                        - 신발: %s
+                        
+                        위에 제공된 목록의 옷만 사용해서
+                        %s룩 스타일로 %s에 어울리는 옷 조합 3가지를 추천해 주세요
+                        
+                        예시:[상의 - 옷이름, 하의 - 옷이름, 아우터 - 옷이름 또는 없음, 신발 - 옷이름]
+                """, topStr, pantStr, outerStr, shoeStr, style, season);
     }
 
     private String toCommaSeparated(List<Clothing> clothes) {
