@@ -6,5 +6,6 @@ public enum Category {
     PANTS,
     SKIRT,
     DRESS,
-    SHOES
+    SHOES;
+    public static Category from(String v){ return valueOf(v.trim().toUpperCase()); }
 }

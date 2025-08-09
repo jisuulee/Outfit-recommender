@@ -21,19 +21,24 @@ public class Clothing {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    @Column(nullable = false)
     private String name; // 옷 이름
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
+    @Column(nullable = false, length = 20)
     private Category category;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
+    @Column(nullable = false, length = 20)
     private Color color;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @Enumerated(EnumType.STRING)
+    @CollectionTable(name = "clothing_seasons", joinColumns = @JoinColumn(name = "clothing_id"))
+    @Column(nullable = false, name = "season")
     private List<Season> seasons = new ArrayList<>();
 
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable=false)
+    private User user;
 }

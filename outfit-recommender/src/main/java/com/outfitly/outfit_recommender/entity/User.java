@@ -15,6 +15,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String name;
     private Integer age;
     private String gender;
@@ -28,5 +29,8 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    private String role = "USER";
+    @Enumerated(EnumType.STRING)
+    @Column(nullable=false)
+    @Builder.Default
+    private Role role = Role.USER;
 }

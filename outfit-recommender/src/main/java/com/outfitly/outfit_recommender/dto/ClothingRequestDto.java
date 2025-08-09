@@ -16,5 +16,4 @@ public class ClothingRequestDto {
     private String category;
     private String color;
     private List<String> seasons;
-    private Long userId;
 }

@@ -6,34 +6,37 @@ import com.outfitly.outfit_recommender.entity.enums.Category;
 import com.outfitly.outfit_recommender.entity.enums.Color;
 import com.outfitly.outfit_recommender.entity.enums.Season;
 import com.outfitly.outfit_recommender.repository.ClothingRepository;
+import com.outfitly.outfit_recommender.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ClothingService {
 
     private final ClothingRepository clothingRepository;
+    private final UserRepository userRepository;
 
-    public Clothing saveClothing(ClothingRequestDto dto) {
-        Clothing clothing = new Clothing();
-        clothing.setName(dto.getName());
-        clothing.setCategory(Category.valueOf(dto.getCategory().toUpperCase()));
-        clothing.setColor(Color.valueOf(dto.getColor().toUpperCase()));
-        clothing.setUserId(dto.getUserId());
+    public Clothing saveClothing(String username, ClothingRequestDto dto) {
+        var user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        List<Season> seasonList = dto.getSeasons().stream()
-                .map(s -> Season.valueOf(s.toUpperCase()))
-                .collect(Collectors.toList());
-        clothing.setSeasons(seasonList);
+        var clothing = Clothing.builder()
+                .name(dto.getName())
+                .category(Category.from(dto.getCategory()))
+                .color(Color.from(dto.getColor()))
+                .seasons(dto.getSeasons().stream().map(Season::from).toList())
+                .user(user)
+                .build();
 
         return clothingRepository.save(clothing);
     }
 
-    public List<Clothing> getUserClothes(Long userId) {
-        return clothingRepository.findAllByUserId(userId);
+    public List<Clothing> getUserClothes(String username) {
+        var user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        return clothingRepository.findAllByUserId(user.getId());
     }
 }
