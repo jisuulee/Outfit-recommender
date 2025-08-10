@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <title>내 옷장</title>
     <link rel="stylesheet" href="/css/styles.css" />
-    <script defer src="/app.js"></script>
 </head>
 <body class="container">
 <nav>
@@ -30,17 +29,23 @@
 
 <script type="module">
     import { api, requireAuth } from "/app.js";
-    window.run = async () => {
-        requireAuth();
-        const list = document.getElementById("list")!;
-        const load = async () => {
-            const res = await api("/api/clothing/me");
-            const data = await res.json();
-            list.innerHTML = data.map((it:any)=>`<li>${it.name} · ${it.category} · ${it.color} · ${(it.seasons||[]).join(",")}</li>`).join("");
-        };
-        await load();
 
-        const form = document.getElementById("addForm") as HTMLFormElement;
+    requireAuth();
+
+    const list = document.getElementById("list");
+    const form = document.getElementById("addForm");
+
+    async function load() {
+        const res = await api("/api/clothing/me");
+        const data = await res.json();
+        if (list) {
+            list.innerHTML = (data || []).map((it) =>
+                `<li>${it.name} · ${it.category} · ${it.color} · ${(it.seasons || []).join(",")}</li>`
+            ).join("");
+        }
+    }
+
+    if (form) {
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
             const fd = new FormData(form);
@@ -48,13 +53,16 @@
                 name: fd.get("name"),
                 category: fd.get("category"),
                 color: fd.get("color"),
-                seasons: String(fd.get("seasons")||"").split(",").map(s=>s.trim()).filter(Boolean)
+                seasons: String(fd.get("seasons") || "")
+                    .split(",").map((s) => s.trim()).filter(Boolean)
             };
             await api("/api/clothing", { method: "POST", body: JSON.stringify(body) });
             form.reset();
             await load();
         });
-    };
+    }
+
+    load();
 </script>
 </body>
 </html>

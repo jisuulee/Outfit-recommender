@@ -23,7 +23,10 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/users/signup", "/api/users/login").permitAll()
-                        .anyRequest().authenticated() // 나머지 모든 요청은 인증 필요
+                        .requestMatchers("/", "/index.html", "/login.html", "/signup.html",
+                                "/wardrobe.html", "/recommend.html",
+                                "/css/**", "/app.js").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
                 .build();

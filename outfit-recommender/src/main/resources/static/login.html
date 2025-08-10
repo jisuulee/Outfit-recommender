@@ -4,9 +4,6 @@
     <meta charset="UTF-8" />
     <title>로그인</title>
     <link rel="stylesheet" href="/css/styles.css" />
-    <script defer src="/app.js"></script>
-    <script defer src="/app.js"></script>
-    <script defer src="/app.js"></script>
 </head>
 <body class="container">
 <h1>로그인</h1>
@@ -19,8 +16,9 @@
 
 <script type="module">
     import { api, setToken } from "/app.js";
-    window.run = () => {
-        const form = document.getElementById("loginForm") as HTMLFormElement;
+
+    const form = document.getElementById("loginForm");
+    if (form) {
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
             const fd = new FormData(form);
@@ -30,7 +28,7 @@
             setToken(data.token);
             location.href = "/index.html";
         });
-    };
+    }
 </script>
 </body>
 </html>

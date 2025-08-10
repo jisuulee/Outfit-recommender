@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <title>코디 추천</title>
     <link rel="stylesheet" href="/css/styles.css" />
-    <script defer src="/app.js"></script>
 </head>
 <body class="container">
 <nav>
@@ -26,30 +25,38 @@
 
 <script type="module">
     import { api, requireAuth } from "/app.js";
-    window.run = () => {
-        requireAuth();
-        const style = document.getElementById("style") as HTMLInputElement;
-        const season = document.getElementById("season") as HTMLSelectElement;
-        const results = document.getElementById("results")!;
-        document.getElementById("runBtn")!.addEventListener("click", async () => {
+
+    function itemName(x) {
+        return x && typeof x === "object" && "name" in x ? x.name : x;
+    }
+
+    requireAuth();
+
+    const styleEl = document.getElementById("style");
+    const seasonEl = document.getElementById("season");
+    const results = document.getElementById("results");
+    const runBtn = document.getElementById("runBtn");
+
+    if (runBtn && styleEl && seasonEl && results) {
+        runBtn.addEventListener("click", async () => {
             const res = await api("/api/coordinates/recommend", {
                 method: "POST",
-                body: JSON.stringify({ style: style.value, season: season.value })
+                body: JSON.stringify({ style: styleEl.value, season: seasonEl.value })
             });
-            const data = await res.json(); // 서버에서 resolve된 DTO라면 객체, 아니라면 배열/문자열
+            const data = await res.json();
             const arr = Array.isArray(data) ? data : (typeof data === "string" ? JSON.parse(data) : data);
-            results.innerHTML = (arr||[]).map((o:any)=>`
-          <div class="card">
-            ${o.dress ? `<div>원피스: ${o.dress.name ?? o.dress}</div>` : `
-              <div>상의: ${o.top?.name ?? o.top}</div>
-              <div>하의: ${o.bottom?.name ?? o.bottom}</div>
-            `}
-            ${o.outer ? `<div>아우터: ${o.outer.name ?? o.outer}</div>` : ``}
-            <div>신발: ${o.shoes?.name ?? o.shoes}</div>
-          </div>
-        `).join("");
+
+            results.innerHTML = (arr || []).map((o) => {
+                const isDress = !!o.dress;
+                const top = isDress ? "" : `<div>상의: ${itemName(o.top)}</div>`;
+                const bottom = isDress ? "" : `<div>하의: ${itemName(o.bottom)}</div>`;
+                const dress = isDress ? `<div>원피스: ${itemName(o.dress)}</div>` : "";
+                const outer = o.outer ? `<div>아우터: ${itemName(o.outer)}</div>` : "";
+                const shoes = `<div>신발: ${itemName(o.shoes)}</div>`;
+                return `<div class="card">${dress}${top}${bottom}${outer}${shoes}</div>`;
+            }).join("");
         });
-    };
+    }
 </script>
 </body>
 </html>
