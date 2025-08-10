@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout( pageTitle='홈', body=~{::main} )}">
+<head><meta charset="UTF-8"/></head>
+<body>
+<main th:fragment="main">
+    <h1>홈</h1>
+    <p>오늘의 코디를 추천받아보세요.</p>
+    <p class="links">
+        <a class="btn" th:href="@{/wardrobe}">내 옷장</a>
+        <a class="btn primary" th:href="@{/recommend}">코디 추천 받기</a>
+    </p>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!window.getToken || !window.getToken()) location.href = '/login';
+        });
+    </script>
+</main>
+</body>
+</html>

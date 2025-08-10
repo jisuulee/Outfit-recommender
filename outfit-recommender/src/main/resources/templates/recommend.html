@@ -1,0 +1,58 @@
+<!-- templates/recommend.html -->
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="layout :: layout (~{::title}, ~{::main})">
+<head>
+    <title>코디 추천</title>
+</head>
+<main class="container" th:fragment="content">
+    <h1>코디 추천</h1>
+
+    <label>스타일 <input id="style" value="데이트룩"></label>
+    <label>계절
+        <select id="season">
+            <option value="">ALL</option>
+            <option>SPRING</option><option>SUMMER</option><option>AUTUMN</option><option>WINTER</option>
+        </select>
+    </label>
+    <button id="runBtn">추천 받기</button>
+
+    <div id="results"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!window.getToken()) return location.href = '/login';
+
+            const styleEl = document.getElementById('style');
+            const seasonEl = document.getElementById('season');
+            const results  = document.getElementById('results');
+            const runBtn   = document.getElementById('runBtn');
+
+            function itemName(x){ return x && typeof x==='object' && 'name' in x ? x.name : x; }
+
+            runBtn.addEventListener('click', async () => {
+                const payload = { style: styleEl.value };
+                const seasonVal = seasonEl.value;    // ALL 이면 보내지 않음
+                if (seasonVal) payload.season = seasonVal;
+
+                const res = await window.api('/api/coordinates/recommend', {
+                    method: 'POST',
+                    body: JSON.stringify({ style: styleEl.value, season: seasonEl.value })
+                });
+                if (!res.ok) { results.innerHTML = '추천 실패'; return; }
+                const data = await res.json();
+                const arr = Array.isArray(data) ? data : (typeof data === 'string' ? JSON.parse(data) : data);
+
+                results.innerHTML = (arr || []).map(o => {
+                    const isDress = !!o.dress;
+                    const top = isDress ? '' : `<div>상의: ${itemName(o.top)}</div>`;
+                    const bottom = isDress ? '' : `<div>하의: ${itemName(o.bottom)}</div>`;
+                    const dress = isDress ? `<div>원피스: ${itemName(o.dress)}</div>` : '';
+                    const outer = o.outer ? `<div>아우터: ${itemName(o.outer)}</div>` : '';
+                    const shoes = `<div>신발: ${itemName(o.shoes)}</div>`;
+                    return `<div class="card">${dress}${top}${bottom}${outer}${shoes}</div>`;
+                }).join('');
+            });
+        });
+    </script>
+</main>
+</html>

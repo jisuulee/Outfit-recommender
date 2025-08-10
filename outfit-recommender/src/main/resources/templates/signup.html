@@ -1,0 +1,40 @@
+<!-- templates/signup.html -->
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="layout :: layout (~{::title}, ~{::main})">
+<head>
+    <title>회원가입</title>
+</head>
+<main class="container" th:fragment="content">
+    <h1>회원가입</h1>
+    <form id="signupForm" class="form">
+        <label>이름 <input name="name" required></label>
+        <label>나이 <input name="age" type="number" required></label>
+        <label>성별 <input name="gender" placeholder="남/여/기타"></label>
+        <label>이메일 <input name="email" type="email" required></label>
+        <label>아이디 <input name="username" required></label>
+        <label>비밀번호 <input name="password" type="password" required></label>
+        <button>가입</button>
+    </form>
+    <p><a th:href="@{/login}">로그인</a></p>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('signupForm');
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const fd = new FormData(form);
+                const body = Object.fromEntries(fd.entries());
+                body.age = Number(body.age);
+
+                const res = await window.api('/api/users/signup', {
+                    method: 'POST',
+                    body: JSON.stringify(body)
+                });
+                if (!res.ok) { alert('가입 실패'); return; }
+                alert('회원가입 성공! 로그인하세요.');
+                location.href = '/login';
+            });
+        });
+    </script>
+</main>
+</html>

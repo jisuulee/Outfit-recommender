@@ -1,0 +1,33 @@
+<!-- templates/login.html -->
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="layout :: layout (~{::title}, ~{::main})">
+<head>
+    <title>로그인</title>
+</head>
+<main class="container" th:fragment="content">
+    <h1>로그인</h1>
+    <form id="loginForm" class="form">
+        <label>아이디 <input name="username" required></label>
+        <label>비밀번호 <input name="password" type="password" required></label>
+        <button>로그인</button>
+    </form>
+    <p><a th:href="@{/signup}">회원가입</a></p>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('loginForm');
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const fd = new FormData(form);
+                const body = JSON.stringify({ username: fd.get('username'), password: fd.get('password') });
+
+                const res = await window.api('/api/users/login', { method: 'POST', body });
+                if (!res.ok) { alert('로그인 실패'); return; }
+                const data = await res.json(); // { token, ... }
+                window.setToken(data.token);
+                location.href = '/';
+            });
+        });
+    </script>
+</main>
+</html>

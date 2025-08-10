@@ -1,0 +1,62 @@
+<!-- templates/wardrobe.html -->
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="layout :: layout (~{::title}, ~{::main})">
+<head>
+    <title>내 옷장</title>
+</head>
+<main class="container" th:fragment="content">
+    <h1>내 옷장</h1>
+    <ul id="list"></ul>
+
+    <h2>옷 추가</h2>
+    <form id="addForm" class="form">
+        <input name="name" placeholder="이름" required>
+        <select name="category">
+            <option>TOP</option><option>PANTS</option><option>SKIRT</option>
+            <option>DRESS</option><option>OUTER</option><option>SHOES</option>
+        </select>
+        <select name="color">
+            <option>BLACK</option><option>WHITE</option><option>GRAY</option>
+            <option>BLUE</option><option>BROWN</option><option>GREEN</option>
+            <option>RED</option><option>YELLOW</option><option>BEIGE</option><option>NAVY</option>
+        </select>
+        <input name="seasons" placeholder="SPRING,SUMMER">
+        <button>추가</button>
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!window.getToken()) return location.href = '/login';
+
+            const list = document.getElementById('list');
+            const form = document.getElementById('addForm');
+
+            async function load() {
+                const res = await window.api('/api/clothing/me');
+                if (!res.ok) { alert('목록 불러오기 실패'); return; }
+                const data = await res.json();
+                list.innerHTML = (data || []).map(it =>
+                    `<li>${it.name} · ${it.category} · ${it.color} · ${(it.seasons||[]).join(',')}</li>`
+                ).join('');
+            }
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const fd = new FormData(form);
+                const body = {
+                    name: fd.get('name'),
+                    category: fd.get('category'),
+                    color: fd.get('color'),
+                    seasons: String(fd.get('seasons')||'').split(',').map(s=>s.trim()).filter(Boolean)
+                };
+                const res = await window.api('/api/clothing', { method: 'POST', body: JSON.stringify(body) });
+                if (!res.ok) { alert('추가 실패'); return; }
+                form.reset();
+                await load();
+            });
+
+            load();
+        });
+    </script>
+</main>
+</html>
