@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>내 옷장</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <script defer src="/app.js"></script>
+</head>
+<body class="container">
+<nav>
+    <a href="/index.html">홈</a>
+    <a href="/wardrobe.html">내 옷장</a>
+    <a href="/recommend.html">코디 추천</a>
+</nav>
+<h1>내 옷장</h1>
+<ul id="list"></ul>
+
+<h2>옷 추가</h2>
+<form id="addForm">
+    <input name="name" placeholder="이름" required>
+    <select name="category">
+        <option>TOP</option><option>PANTS</option><option>SKIRT</option><option>DRESS</option><option>OUTER</option><option>SHOES</option>
+    </select>
+    <select name="color">
+        <option>BLACK</option><option>WHITE</option><option>GRAY</option><option>BLUE</option><option>BROWN</option><option>GREEN</option><option>RED</option><option>YELLOW</option><option>BEIGE</option><option>NAVY</option>
+    </select>
+    <input name="seasons" placeholder="SPRING,SUMMER">
+    <button>추가</button>
+</form>
+
+<script type="module">
+    import { api, requireAuth } from "/app.js";
+    window.run = async () => {
+        requireAuth();
+        const list = document.getElementById("list")!;
+        const load = async () => {
+            const res = await api("/api/clothing/me");
+            const data = await res.json();
+            list.innerHTML = data.map((it:any)=>`<li>${it.name} · ${it.category} · ${it.color} · ${(it.seasons||[]).join(",")}</li>`).join("");
+        };
+        await load();
+
+        const form = document.getElementById("addForm") as HTMLFormElement;
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const fd = new FormData(form);
+            const body = {
+                name: fd.get("name"),
+                category: fd.get("category"),
+                color: fd.get("color"),
+                seasons: String(fd.get("seasons")||"").split(",").map(s=>s.trim()).filter(Boolean)
+            };
+            await api("/api/clothing", { method: "POST", body: JSON.stringify(body) });
+            form.reset();
+            await load();
+        });
+    };
+</script>
+</body>
+</html>

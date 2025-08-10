@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>코디 추천</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <script defer src="/app.js"></script>
+</head>
+<body class="container">
+<nav>
+    <a href="/index.html">홈</a>
+    <a href="/wardrobe.html">내 옷장</a>
+    <a href="/recommend.html">코디 추천</a>
+</nav>
+<h1>코디 추천</h1>
+
+<label>스타일 <input id="style" value="데이트룩"></label>
+<label>계절
+    <select id="season">
+        <option>SPRING</option><option>SUMMER</option><option>AUTUMN</option><option>WINTER</option>
+    </select>
+</label>
+<button id="runBtn">추천 받기</button>
+
+<div id="results"></div>
+
+<script type="module">
+    import { api, requireAuth } from "/app.js";
+    window.run = () => {
+        requireAuth();
+        const style = document.getElementById("style") as HTMLInputElement;
+        const season = document.getElementById("season") as HTMLSelectElement;
+        const results = document.getElementById("results")!;
+        document.getElementById("runBtn")!.addEventListener("click", async () => {
+            const res = await api("/api/coordinates/recommend", {
+                method: "POST",
+                body: JSON.stringify({ style: style.value, season: season.value })
+            });
+            const data = await res.json(); // 서버에서 resolve된 DTO라면 객체, 아니라면 배열/문자열
+            const arr = Array.isArray(data) ? data : (typeof data === "string" ? JSON.parse(data) : data);
+            results.innerHTML = (arr||[]).map((o:any)=>`
+          <div class="card">
+            ${o.dress ? `<div>원피스: ${o.dress.name ?? o.dress}</div>` : `
+              <div>상의: ${o.top?.name ?? o.top}</div>
+              <div>하의: ${o.bottom?.name ?? o.bottom}</div>
+            `}
+            ${o.outer ? `<div>아우터: ${o.outer.name ?? o.outer}</div>` : ``}
+            <div>신발: ${o.shoes?.name ?? o.shoes}</div>
+          </div>
+        `).join("");
+        });
+    };
+</script>
+</body>
+</html>
