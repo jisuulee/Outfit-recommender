@@ -49,12 +49,10 @@ public class CoordinateService {
 
         // 최대 2회 보정 재시도
         int attempts = 0;
-        String lastRaw = null;
 
         while (attempts < 3) {
             attempts++;
             String raw = openApiService.askGpt(prompt);
-            lastRaw = raw;
 
             List<OutfitCandidate> parsed = parseOutfits(raw); // JSON 배열 파싱
             List<OutfitCandidate> filtered = parsed.stream()
