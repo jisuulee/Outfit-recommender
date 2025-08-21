@@ -49,7 +49,6 @@ public class CoordinateService {
 
         // 최대 2회 보정 재시도
         int attempts = 0;
-        List<OutfitCandidate> valid = null;
         String lastRaw = null;
 
         while (attempts < 3) {
@@ -65,10 +64,35 @@ public class CoordinateService {
                     .toList();
 
             if (!filtered.isEmpty()) {
-                // 성공: 사람이 보기 좋은 문자열로 변환해서 반환해도 되고,
-                // JSON 그대로 반환해도 됨. 여기선 JSON string으로 반환.
                 try {
-                    return objectMapper.writeValueAsString(filtered);
+                    // ID -> 이름 매핑
+                    // 필요한 모든 ID 수집
+                    Set<Long> idSet = filtered.stream().flatMap(o -> {
+                        List<Long> ids = new ArrayList<>();
+                        if (o.getTop()    != null) ids.add(o.getTop());
+                        if (o.getBottom() != null) ids.add(o.getBottom());
+                        if (o.getDress()  != null) ids.add(o.getDress());
+                        if (o.getOuter()  != null) ids.add(o.getOuter());
+                        if (o.getShoes()  != null) ids.add(o.getShoes());
+                        return ids.stream();
+                    }).collect(Collectors.toSet());
+
+                    // 한 번에 조회 후 map 구성 (JpaRepository 기본 메서드 활용)
+                    Map<Long, Clothing> byId = clothingRepository.findAllById(idSet).stream()
+                            .collect(Collectors.toMap(Clothing::getId, c -> c));
+
+                    // 이름만 담은 간단 DTO로 변환
+                    record OutfitSimple(String top, String bottom, String outer, String shoes, String dress) {}
+                    List<OutfitSimple> result = filtered.stream().map(o -> new OutfitSimple(
+                            name(byId.get(o.getTop())),
+                            name(byId.get(o.getBottom())),
+                            name(byId.get(o.getOuter())),
+                            name(byId.get(o.getShoes())),
+                            name(byId.get(o.getDress()))
+                    )).toList();
+
+                    // 4) JSON 문자열로 반환
+                    return objectMapper.writeValueAsString(result);
                 } catch (Exception ignored) { /* fall-through */ }
             }
 
@@ -82,6 +106,8 @@ public class CoordinateService {
                아이템을 추가하거나 조건(계절/스타일)을 변경해 다시 시도해주세요.
                """;
     }
+
+    private String name(Clothing c) { return c == null ? null : c.getName(); }
 
     /* =================== Prompt Builders =================== */
 

@@ -10,17 +10,51 @@
 
     <h2>옷 추가</h2>
     <form id="addForm" class="form">
-        <input name="name" placeholder="이름" required>
-        <select name="category">
-            <option>TOP</option><option>PANTS</option><option>SKIRT</option>
-            <option>DRESS</option><option>OUTER</option><option>SHOES</option>
-        </select>
-        <select name="color">
-            <option>BLACK</option><option>WHITE</option><option>GRAY</option>
-            <option>BLUE</option><option>BROWN</option><option>GREEN</option>
-            <option>RED</option><option>YELLOW</option><option>BEIGE</option><option>NAVY</option>
-        </select>
-        <input name="seasons" placeholder="SPRING,SUMMER">
+        <label>이름:
+            <input name="name" placeholder="이름" required>
+        </label>
+
+        <label>카테고리:
+            <select name="category">
+                <option>TOP</option>
+                <option>PANTS</option>
+                <option>SKIRT</option>
+                <option>DRESS</option>
+                <option>OUTER</option>
+                <option>SHOES</option>
+            </select>
+        </label>
+
+        <label>컬러:
+            <select name="color">
+                <option>BLACK</option>
+                <option>WHITE</option>
+                <option>GRAY</option>
+                <option>BLUE</option>
+                <option>BROWN</option>
+                <option>GREEN</option>
+                <option>RED</option>
+                <option>YELLOW</option>
+                <option>BEIGE</option>
+                <option>NAVY</option>
+                <option>PINK</option>
+                <option>ORANGE</option>
+                <option>IVORY</option>
+                <option>MINT</option>
+                <option>SKYBLUE</option>
+                <option>PURPLE</option>
+                <option>DENIM</option>
+            </select>
+        </label>
+
+        <fieldset id="seasonGroup" style="border:0;padding:0;margin:6px 0">
+            <legend style="font-weight:600">계절</legend>
+            <label><input type="checkbox" name="seasons" value="SPRING"> SPRING</label>
+            <label><input type="checkbox" name="seasons" value="SUMMER"> SUMMER</label>
+            <label><input type="checkbox" name="seasons" value="AUTUMN"> AUTUMN</label>
+            <label><input type="checkbox" name="seasons" value="WINTER"> WINTER</label>
+            <label><input type="checkbox" name="seasons" value="ALL"> ALL</label>
+        </fieldset>
         <button>추가</button>
     </form>
 
@@ -31,32 +65,195 @@
             const list = document.getElementById('list');
             const form = document.getElementById('addForm');
 
-            async function load() {
-                const res = await window.api('/api/clothing/me');
-                if (!res.ok) { alert('목록 불러오기 실패'); return; }
-                const data = await res.json();
-                list.innerHTML = (data || []).map(it =>
-                    `<li>${it.name} · ${it.category} · ${it.color} · ${(it.seasons||[]).join(',')}</li>`
-                ).join('');
+            // 선택지(백엔드 enum과 동일해야 함)
+            const CATEGORY = ['TOP', 'PANTS', 'SKIRT', 'DRESS', 'OUTER', 'SHOES'];
+            const COLOR = ['BLACK', 'WHITE', 'GRAY', 'BLUE', 'BROWN', 'GREEN', 'RED', 'YELLOW', 'BEIGE', 'NAVY'];
+            const SEASONS = ['SPRING', 'SUMMER', 'AUTUMN', 'WINTER', 'ALL'];
+
+            // id -> item 캐시 (수정 시 기존값 비교용)
+            const items = new Map();
+
+            function viewSeasons(arr) {
+                return (arr && arr.length) ? arr.join(',') : 'ALL';
             }
 
+            function renderItem(it) {
+                const seasons = viewSeasons(it.seasons);
+                return `
+      <li data-id="${it.id}">
+        <strong>${it.name}</strong>
+        <small> · ${it.category} · ${it.color} · ${seasons}</small>
+        <button class="editBtn" style="margin-left:8px">수정</button>
+        <button class="delBtn">삭제</button>
+      </li>
+    `;
+            }
+
+            function renderEditRow(it){
+                const seasonChecks = SEASONS.map(s => {
+                    const checked = (it.seasons || []).includes(s) ? 'checked' : '';
+                    return `<label style="margin-right:10px">
+              <input type="checkbox" name="seasons" value="${s}" ${checked}> ${s}
+            </label>`;
+                }).join('');
+
+                const catOpts = CATEGORY.map(c => `<option ${c===it.category?'selected':''}>${c}</option>`).join('');
+                const colOpts = COLOR.map(c => `<option ${c===it.color   ?'selected':''}>${c}</option>`).join('');
+
+                return `
+    <li data-id="${it.id}" class="item-row">
+      <input class="name" name="name" value="${it.name}">
+      <select name="category">${catOpts}</select>
+      <select name="color">${colOpts}</select>
+
+      <div class="actions">
+        <button class="saveBtn">저장</button>
+        <button class="cancelBtn">취소</button>
+      </div>
+
+      <div class="seasonBox">
+        ${seasonChecks}
+      </div>
+    </li>
+  `;
+            }
+
+
+            // ALL 체크박스 배타 처리 (부모LI or 추가폼 seasonGroup 둘 다에서 사용)
+            function wireAllExclusive(container) {
+                container.addEventListener('change', (e) => {
+                    const t = e.target;
+                    if (!(t instanceof HTMLInputElement)) return;
+                    if (t.name !== 'seasons') return;
+                    const checks = container.querySelectorAll('input[name="seasons"]');
+                    if (t.value === 'ALL' && t.checked) {
+                        checks.forEach(c => {
+                            if (c.value !== 'ALL') c.checked = false;
+                        });
+                    } else if (t.value !== 'ALL' && t.checked) {
+                        const all = container.querySelector('input[name="seasons"][value="ALL"]');
+                        if (all) all.checked = false;
+                    }
+                });
+            }
+
+            async function load() {
+                const res = await window.api('/api/clothing/me');
+                if (!res.ok) {
+                    alert('목록 불러오기 실패');
+                    return;
+                }
+                const data = await res.json();
+
+                items.clear();
+                list.innerHTML = (data || []).map(it => {
+                    items.set(it.id, it);
+                    return renderItem(it);
+                }).join('');
+            }
+
+            wireAllExclusive(document.getElementById('seasonGroup'));
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
+
                 const fd = new FormData(form);
+                const selected = [...form.querySelectorAll('input[name="seasons"]:checked')].map(i => i.value);
+
                 const body = {
                     name: fd.get('name'),
                     category: fd.get('category'),
                     color: fd.get('color'),
-                    seasons: String(fd.get('seasons')||'').split(',').map(s=>s.trim()).filter(Boolean)
+                    seasons: selected // []면 서버에서 비움으로 처리(또는 ALL만 보내도 됨)
                 };
-                const res = await window.api('/api/clothing', { method: 'POST', body: JSON.stringify(body) });
-                if (!res.ok) { alert('추가 실패'); return; }
+
+                const res = await window.api('/api/clothing', {method: 'POST', body: JSON.stringify(body)});
+                if (!res.ok) {
+                    alert('추가 실패');
+                    return;
+                }
                 form.reset();
                 await load();
+            });
+
+            // 수정/삭제
+            list.addEventListener('click', async (e) => {
+                const target = e.target;
+                if (!(target instanceof HTMLElement)) return;
+                const li = target.closest('li');
+                if (!li) return;
+                const id = Number(li.getAttribute('data-id'));
+                if (!id) return;
+
+                // 삭제
+                if (target.classList.contains('delBtn')) {
+                    if (!confirm('삭제할까요?')) return;
+                    const res = await window.api(`/api/clothing/${id}`, {method: 'DELETE'});
+                    if (!res.ok && res.status !== 204) {
+                        alert('삭제 실패');
+                        return;
+                    }
+                    await load();
+                    return;
+                }
+
+                // 수정 시작
+                if (target.classList.contains('editBtn')) {
+                    const it = items.get(id);
+                    li.outerHTML = renderEditRow(it);
+                    const newLi = list.querySelector(`li[data-id="${id}"]`);
+                    const box = newLi.querySelector('.seasonBox');
+                    if (box) wireAllExclusive(box);
+                    return;
+                }
+
+                // 수정 저장
+                if (target.classList.contains('saveBtn')) {
+                    const it = items.get(id);
+                    const newLi = target.closest('li');
+
+                    const name = newLi.querySelector('input[name="name"]').value.trim();
+                    const category = newLi.querySelector('select[name="category"]').value;
+                    const color = newLi.querySelector('select[name="color"]').value;
+                    const seasons = [...newLi.querySelectorAll('input[name="seasons"]:checked')].map(i => i.value);
+
+                    // 변경된 필드만 payload에 포함 (PATCH)
+                    const payload = {};
+                    if (name && name !== it.name) payload.name = name;
+                    if (category && category !== it.category) payload.category = category;
+                    if (color && color !== it.color) payload.color = color;
+
+                    // seasons 비교(정렬해 비교)
+                    const oldS = (it.seasons || []).slice().sort().join(',');
+                    const newS = seasons.slice().sort().join(',');
+                    if (newS !== oldS) payload.seasons = seasons;
+
+                    if (Object.keys(payload).length === 0) { // 변경없음
+                        await load();
+                        return;
+                    }
+
+                    const res = await window.api(`/api/clothing/${id}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) {
+                        alert('수정 실패');
+                        return;
+                    }
+                    await load();
+                    return;
+                }
+
+                // 수정 취소
+                if (target.classList.contains('cancelBtn')) {
+                    await load();
+                    return;
+                }
             });
 
             load();
         });
     </script>
+
 </main>
 </html>
