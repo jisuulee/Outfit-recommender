@@ -6,6 +6,7 @@ import com.outfitly.outfit_recommender.dto.OutfitCandidate;
 import com.outfitly.outfit_recommender.entity.Clothing;
 import com.outfitly.outfit_recommender.entity.User;
 import com.outfitly.outfit_recommender.entity.enums.Category;
+import com.outfitly.outfit_recommender.entity.enums.Season;
 import com.outfitly.outfit_recommender.repository.ClothingRepository;
 import com.outfitly.outfit_recommender.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,8 @@ public class CoordinateService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
+        Season target = parseSeason(season);
+
         // 인벤토리 수집
         var tops    = clothingRepository.findByUserAndCategory(user, Category.TOP);
         var pants   = clothingRepository.findByUserAndCategory(user, Category.PANTS);
@@ -37,15 +40,31 @@ public class CoordinateService {
         var outers  = clothingRepository.findByUserAndCategory(user, Category.OUTER);
         var shoes   = clothingRepository.findByUserAndCategory(user, Category.SHOES);
 
-        // 허용 ID 집합 (검증용)
-        var allowedTop    = toIdSet(tops);
-        var allowedBottom = union(toIdSet(pants), toIdSet(skirts)); // bottom = pants|skirt
-        var allowedDress  = toIdSet(dresses);
-        var allowedOuter  = toIdSet(outers);
-        var allowedShoes  = toIdSet(shoes);
+        // 시즌 필터 거치기
+        var filterTops    = tops.stream()   .filter(c -> matchesSeason(c, target)).toList();
+        var filterPants   = pants.stream()  .filter(c -> matchesSeason(c, target)).toList();
+        var filterSkirts  = skirts.stream() .filter(c -> matchesSeason(c, target)).toList();
+        var filterDress = dresses.stream().filter(c -> matchesSeason(c, target)).toList();
+        var filterOuters  = outers.stream() .filter(c -> matchesSeason(c, target)).toList();
+        var filtersShoes   = shoes.stream()  .filter(c -> matchesSeason(c, target)).toList();
+
+        // 필수 카테고리 부족 시 안내
+        if (filtersShoes.isEmpty()) {
+            return "선택한 계절에 맞는 신발이 없습니다. 사계절(ALL) 신발을 등록하거나 계절을 바꿔주세요.";
+        }
+
+        // 허용 ID 집합도 필터된 목록으로 구성
+        var allowedTop    = toIdSet(filterTops);
+        var allowedBottom = union(toIdSet(filterPants), toIdSet(filterSkirts)); // bottom = pants | skirt
+        var allowedDress  = toIdSet(filterDress);
+        var allowedOuter  = toIdSet(filterOuters);
+        var allowedShoes  = toIdSet(filtersShoes);
 
         // 프롬프트 생성 (id:이름 목록 + JSON 형식 강제)
-        String prompt = buildPromptWithIds(style, season, tops, pants, skirts, dresses, outers, shoes);
+        String prompt = buildPromptWithIds(
+                style, target.name(),
+                filterTops, filterPants, filterSkirts, filterDress, filterOuters, filtersShoes
+        );
 
         // 최대 2회 보정 재시도
         int attempts = 0;
@@ -56,7 +75,7 @@ public class CoordinateService {
 
             List<OutfitCandidate> parsed = parseOutfits(raw); // JSON 배열 파싱
             List<OutfitCandidate> filtered = parsed.stream()
-                    .filter(o -> isValid(o, allowedTop, allowedBottom, allowedDress, allowedOuter, allowedShoes))
+                    .filter(o -> isValid(o, allowedTop, allowedBottom, allowedDress, allowedOuter, allowedShoes, target))
                     .distinct()
                     .limit(3)
                     .toList();
@@ -95,7 +114,10 @@ public class CoordinateService {
             }
 
             // 실패 → 보정 프롬프트로 재시도
-            prompt = buildCorrectionPrompt(style, season, tops, pants, skirts, dresses, outers, shoes, parsed);
+            prompt = buildPromptWithIds(
+                    style, target.name(),
+                    filterTops, filterPants, filterSkirts, filterDress, filterOuters, filtersShoes
+            );
         }
 
         // 모든 시도 실패 시 사용자에게 적절한 메시지
@@ -136,6 +158,7 @@ public class CoordinateService {
             (A) {"top":<id>,"bottom":<id>,"shoes":<id>,"outer":<id?>}
             (B) {"dress":<id>,"shoes":<id>,"outer":<id?>}
             outer가 없으면 "outer" 키를 생략하세요.
+            단, 시즌이 WINTER라면 반드시 outer 키를 포함해야 합니다.
             """,
                 joinInventory(tops), joinInventory(pants), joinInventory(skirts),
                 joinInventory(dresses), joinInventory(outers), joinInventory(shoes),
@@ -181,7 +204,8 @@ public class CoordinateService {
     private boolean isValid(
             OutfitCandidate o,
             Set<Long> allowedTop, Set<Long> allowedBottom, Set<Long> allowedDress,
-            Set<Long> allowedOuter, Set<Long> allowedShoes
+            Set<Long> allowedOuter, Set<Long> allowedShoes,
+            Season target
     ) {
         // 형태 체크: A 또는 B 중 하나만
         boolean a = o.isTypeA();
@@ -202,10 +226,29 @@ public class CoordinateService {
             // dress 허용 id 체크
             if (!allowedDress.contains(o.getDress())) return false;
         }
+
+        // 겨울이면 outer 필수
+        if (target == Season.WINTER && o.getOuter() == null) return false;
+
         return true;
     }
 
-    /* =================== Helpers =================== */
+    // 입력 시즌 파싱 (UI에서만 온다고 가정하되, 예외 시 ALL)
+    private Season parseSeason(String s) {
+        if (s == null || s.isBlank()) return Season.ALL;
+        try { return Season.valueOf(s.toUpperCase(Locale.ROOT)); }
+        catch (IllegalArgumentException e) { return Season.ALL; } // 오타/직접호출 방어
+    }
+
+    // 아이템이 시즌에 맞는지
+    private boolean matchesSeason(Clothing c, Season target) {
+        if (c == null) return false;
+        var has = c.getSeasons();                 // List<Season>
+        if (has == null || has.isEmpty()) return false;
+        if (target == Season.ALL) return true;    // 전체 허용
+        if (has.contains(Season.ALL)) return true;// 사계절 아이템은 항상 허용
+        return has.contains(target);
+    }
 
     private Set<Long> toIdSet(List<Clothing> list) {
         return list.stream().map(Clothing::getId).collect(Collectors.toSet());
