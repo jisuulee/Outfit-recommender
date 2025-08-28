@@ -11,4 +11,5 @@ public class PageController {
     @GetMapping("/signup")     public String signup()    { return "signup"; }
     @GetMapping("/wardrobe")   public String wardrobe()  { return "wardrobe"; }
     @GetMapping("/recommend")  public String recommend() { return "recommend"; }
+    @GetMapping("/profile")    public String profile() { return "profile"; }
 }

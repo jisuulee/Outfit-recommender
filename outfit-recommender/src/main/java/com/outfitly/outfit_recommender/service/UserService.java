@@ -1,19 +1,23 @@
 package com.outfitly.outfit_recommender.service;
 
+import com.outfitly.outfit_recommender.dto.ChangePasswordRequestDto;
 import com.outfitly.outfit_recommender.dto.SignupRequestDto;
+import com.outfitly.outfit_recommender.dto.UpdateUserRequestDto;
 import com.outfitly.outfit_recommender.entity.User;
 import com.outfitly.outfit_recommender.jwt.JwtUtil;
 import com.outfitly.outfit_recommender.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
     // 회원가입
@@ -54,6 +58,75 @@ public class UserService {
         }
 
         return jwtUtil.generateToken(user.getUsername());
+    }
+
+    // 컨트롤러 응답용 프로필 DTO
+    public record UserProfileDto(String name, Integer age, String gender, String email, String username) {}
+
+    // 내 프로필 조회
+    public UserProfileDto getProfile(String username) {
+        User u = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        return new UserProfileDto(u.getName(), u.getAge(), u.getGender(), u.getEmail(), u.getUsername());
+    }
+
+    // 내 프로필 부분 수정(null/빈 문자열 필드는 무시)
+    public UserProfileDto updateProfile(String username, UpdateUserRequestDto dto) {
+        User u = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+        if (dto.getName() != null && !dto.getName().isBlank()) {
+            u.setName(dto.getName().trim());
+        }
+        if (dto.getAge() != null) {
+            u.setAge(dto.getAge());
+        }
+        if (dto.getGender() != null && !dto.getGender().isBlank()) {
+            u.setGender(dto.getGender().trim());
+        }
+
+        if (dto.getEmail() != null && !dto.getEmail().isBlank() && !dto.getEmail().equals(u.getEmail())) {
+            if (userRepository.existsByEmail(dto.getEmail())) {
+                throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            }
+            u.setEmail(dto.getEmail().trim().toLowerCase(Locale.ROOT));
+        }
+
+        userRepository.save(u);
+        return new UserProfileDto(
+                u.getName(),
+                u.getAge(),
+                u.getGender(),
+                u.getEmail(),
+                u.getUsername()
+        );
+    }
+
+    // 비밀번호 변경: 현재 비번 확인 → 새 비번 유효성 체크(간단) → 저장
+    public void changePassword(String username, ChangePasswordRequestDto dto) {
+        User u = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+        if (dto.getCurrentPassword() == null || dto.getNewPassword() == null) {
+            throw new IllegalArgumentException("비밀번호를 입력해주세요.");
+        }
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), u.getPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+        }
+        if (dto.getNewPassword().length() < 8) {
+            throw new IllegalArgumentException("새 비밀번호는 8자 이상이어야 합니다.");
+        }
+
+        u.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        userRepository.save(u);
+    }
+
+    // 회원 탈퇴: 연관 데이터 정책 확인 필요
+    public void deleteAccount(String username) {
+        User u = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+        userRepository.delete(u);
     }
 
 }

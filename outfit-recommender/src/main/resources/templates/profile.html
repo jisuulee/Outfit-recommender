@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout (~{::title}, ~{::main})}">
+<head>
+    <title>내 정보</title>
+    <meta charset="UTF-8"/>
+</head>
+<main th:fragment="main">
+    <h1>내 정보 관리</h1>
+
+    <section>
+        <h2>내 프로필</h2>
+        <button class="btn" onclick="loadProfile()">내 정보 불러오기</button>
+        <pre id="profileArea"></pre>
+    </section>
+
+    <section>
+        <h2>프로필 수정</h2>
+        <form id="updateForm">
+            <label>이름: <input type="text" name="name"/></label><br/>
+            <label>이메일: <input type="email" name="email"/></label><br/>
+            <label>나이: <input type="number" name="age"/></label><br/>
+            <button type="submit" class="btn primary">수정하기</button>
+        </form>
+    </section>
+
+    <section>
+        <h2>비밀번호 변경</h2>
+        <form id="pwForm">
+            <label>현재 비밀번호: <input type="password" name="currentPassword"/></label><br/>
+            <label>새 비밀번호: <input type="password" name="newPassword"/></label><br/>
+            <button type="submit" class="btn primary">비밀번호 변경</button>
+        </form>
+    </section>
+
+    <section>
+        <h2>회원 탈퇴</h2>
+        <button class="btn danger" onclick="deleteAccount()">탈퇴하기</button>
+    </section>
+
+    <script>
+        // 토큰 유틸(네 프로젝트에 이미 있다면 그걸 쓰면 됨)
+        const token = (window.getToken && window.getToken()) || localStorage.getItem('token');
+
+        function authHeaders(extra = {}) {
+            return {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+                ...extra
+            };
+        }
+
+        function loadProfile() {
+            fetch('/api/users/me', { headers: authHeaders() })
+                .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
+                .then(data => document.getElementById('profileArea').innerText = JSON.stringify(data, null, 2))
+                .catch(e => alert(e.message || '불러오기 실패'));
+        }
+
+        document.getElementById('updateForm').addEventListener('submit', e => {
+            e.preventDefault();
+            const formData = Object.fromEntries(new FormData(e.target).entries());
+            fetch('/api/users/me', {
+                method: 'PATCH',
+                headers: authHeaders(),
+                body: JSON.stringify(formData)
+            })
+                .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
+                .then(data => { alert('수정 완료'); loadProfile(); })
+                .catch(e => alert(e.message || '수정 실패'));
+        });
+
+        document.getElementById('pwForm').addEventListener('submit', e => {
+            e.preventDefault();
+            const formData = Object.fromEntries(new FormData(e.target).entries());
+            fetch('/api/users/me/password', {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify(formData)
+            })
+                .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
+                .then(data => alert(data.message || '비밀번호 변경 완료'))
+                .catch(e => alert(e.message || '비밀번호 변경 실패'));
+        });
+
+        function deleteAccount() {
+            if (!confirm('정말 탈퇴하시겠습니까?')) return;
+            fetch('/api/users/me', {
+                method: 'DELETE',
+                headers: authHeaders()
+            })
+                .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
+                .then(data => {
+                    alert(data.message || '탈퇴 완료');
+                    localStorage.removeItem('token');
+                    location.href = '/login';
+                })
+                .catch(e => alert(e.message || '탈퇴 실패'));
+        }
+    </script>
+</main>
+</html>
