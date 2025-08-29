@@ -1,5 +1,6 @@
 package com.outfitly.outfit_recommender.dto;
 
+import jakarta.validation.constraints.Email;
 import lombok.*;
 
 @Getter
@@ -10,7 +11,8 @@ public class SignupRequestDto {
     private String name;
     private Integer age;
     private String gender;
-    private String email;
+    @Email private String email;
     private String username;
     private String password;
+    private String passwordConfirm; // 비밀번호 2차 검증
 }

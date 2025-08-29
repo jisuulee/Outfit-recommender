@@ -1,38 +1,112 @@
 <!-- templates/signup.html -->
 <!doctype html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="layout :: layout (~{::title}, ~{::main})">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout (~{::title}, ~{::main})}">
 <head>
     <title>회원가입</title>
+    <meta charset="UTF-8"/>
 </head>
-<main class="container" th:fragment="content">
+
+<main class="container" th:fragment="main">
     <h1>회원가입</h1>
-    <form id="signupForm" class="form">
-        <label>이름 <input name="name" required></label>
-        <label>나이 <input name="age" type="number" required></label>
-        <label>성별 <input name="gender" placeholder="남/여/기타"></label>
-        <label>이메일 <input name="email" type="email" required></label>
-        <label>아이디 <input name="username" required></label>
-        <label>비밀번호 <input name="password" type="password" required></label>
-        <button>가입</button>
+
+    <form id="signupForm" class="form" novalidate>
+        <label>이름
+            <input name="name" required>
+        </label>
+
+        <label>나이
+            <input name="age" type="number" min="0" step="1" required>
+        </label>
+
+        <fieldset style="border:0; padding:0; margin:8px 0">
+            <legend style="font-weight:600">성별</legend>
+            <label style="margin-right:12px">
+                <input type="radio" name="gender" value="남" checked> 남
+            </label>
+            <label style="margin-right:12px">
+                <input type="radio" name="gender" value="여"> 여
+            </label>
+            <label>
+                <input type="radio" name="gender" value="기타"> 기타
+            </label>
+        </fieldset>
+
+        <label>이메일
+            <input name="email" type="email" required>
+        </label>
+
+        <label>아이디
+            <input name="username" required>
+        </label>
+
+        <label>비밀번호
+            <input name="password" type="password" required minlength="8" autocomplete="new-password">
+        </label>
+
+        <label>비밀번호 확인
+            <input name="passwordConfirm" type="password" required minlength="8" autocomplete="new-password">
+        </label>
+
+        <button type="submit">가입</button>
     </form>
+
     <p><a th:href="@{/login}">로그인</a></p>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('signupForm');
+
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const fd = new FormData(form);
-                const body = Object.fromEntries(fd.entries());
-                body.age = Number(body.age);
 
-                const res = await window.api('/api/users/signup', {
-                    method: 'POST',
-                    body: JSON.stringify(body)
-                });
-                if (!res.ok) { alert('가입 실패'); return; }
-                alert('회원가입 성공! 로그인하세요.');
-                location.href = '/login';
+                // 간단한 프론트 검증
+                const fd = new FormData(form);
+                const data = Object.fromEntries(fd.entries());
+
+                // 숫자 변환
+                if (data.age !== undefined && data.age !== '') {
+                    data.age = Number(data.age);
+                }
+
+                // 비밀번호 일치 확인
+                if (!data.password || !data.passwordConfirm) {
+                    alert('비밀번호와 비밀번호 확인을 모두 입력해주세요.');
+                    return;
+                }
+                if (data.password !== data.passwordConfirm) {
+                    alert('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+                    return;
+                }
+
+                // (선택) 프론트 쪽 간단 정책: 길이만 체크
+                if (data.password.length < 8) {
+                    alert('비밀번호는 8자 이상이어야 합니다.');
+                    return;
+                }
+
+                try {
+                    const res = await window.api('/api/users/signup', {
+                        method: 'POST',
+                        body: JSON.stringify(data)
+                    });
+
+                    if (!res.ok) {
+                        // 서버에서 온 에러 메시지 보여주기 시도
+                        let msg = '가입 실패';
+                        try {
+                            const err = await res.json();
+                            if (err && err.message) msg = err.message;
+                        } catch (_) {}
+                        alert(msg);
+                        return;
+                    }
+
+                    alert('회원가입 성공! 로그인하세요.');
+                    location.href = '/login';
+                } catch (err) {
+                    alert('네트워크 오류로 가입에 실패했습니다.');
+                }
             });
         });
     </script>

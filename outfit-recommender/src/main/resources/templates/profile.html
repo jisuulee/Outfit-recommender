@@ -8,11 +8,76 @@
 <main th:fragment="main">
     <h1>내 정보 관리</h1>
 
+    <!-- 프로필 섹션 -->
     <section>
         <h2>내 프로필</h2>
-        <button class="btn" onclick="loadProfile()">내 정보 불러오기</button>
-        <pre id="profileArea"></pre>
+        <!-- 로딩 스켈레톤 -->
+        <div id="profileSkeleton" class="card skeleton" hidden>
+            <div class="head">
+                <div class="avatar"></div>
+                <div class="title"></div>
+                <div class="subtitle"></div>
+            </div>
+            <ul class="kv">
+                <li><span class="k"></span><span class="v"></span></li>
+                <li><span class="k"></span><span class="v"></span></li>
+                <li><span class="k"></span><span class="v"></span></li>
+                <li><span class="k"></span><span class="v"></span></li>
+            </ul>
+        </div>
+
+        <!-- 실제 프로필 카드 -->
+        <div id="profileCard" class="card" hidden>
+            <div class="head">
+                <div class="avatar" id="pAvatar">U</div>
+                <div>
+                    <div class="title" id="pName">-</div>
+                    <div class="subtitle"><span id="pUsername">@username</span></div>
+                </div>
+            </div>
+            <ul class="kv">
+                <li><span class="k">이메일</span><span class="v" id="pEmail">-</span></li>
+                <li><span class="k">나이</span><span class="v" id="pAge">-</span></li>
+                <li><span class="k">성별</span><span class="v" id="pGender">-</span></li>
+            </ul>
+        </div>
+
+        <!-- 오류/비어있음 -->
+        <div id="profileEmpty" class="empty" hidden>아직 불러온 정보가 없어요.</div>
     </section>
+
+    <style>
+        .row{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+        .card{
+            border:1px solid #e5e7eb;border-radius:14px;padding:16px;
+            box-shadow:0 2px 10px rgba(0,0,0,.04);max-width:520px;background:#fff
+        }
+        .head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+        .avatar{
+            width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+            background:#f3f4f6;font-weight:700;color:#374151
+        }
+        .title{font-size:1.1rem;font-weight:700}
+        .subtitle{color:#6b7280;font-size:.9rem}
+        .kv{list-style:none;padding:0;margin:10px 0 0}
+        .kv li{display:flex;justify-content:space-between;padding:8px 0;border-top:1px dashed #eee}
+        .kv .k{color:#6b7280}
+        .kv .v{color:#111827;font-weight:600}
+        .empty{color:#6b7280;margin-top:6px}
+        /* 스켈레톤 */
+        .skeleton .avatar,.skeleton .title,.skeleton .subtitle,.skeleton .kv .k,.skeleton .kv .v{
+            background:linear-gradient(90deg,#f3f4f6,#e5e7eb,#f3f4f6);
+            background-size:200% 100%;animation:shimmer 1.2s infinite
+        }
+        .skeleton .avatar{border-radius:50%}
+        .skeleton .title{height:16px;width:160px;border-radius:8px}
+        .skeleton .subtitle{height:12px;width:110px;border-radius:6px;margin-top:6px}
+        .skeleton .kv li{border-top:1px dashed #f3f4f6}
+        .skeleton .kv .k,.skeleton .kv .v{height:12px;border-radius:6px;display:inline-block}
+        .skeleton .kv .k{width:60px}
+        .skeleton .kv .v{width:120px}
+        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    </style>
 
     <section>
         <h2>프로필 수정</h2>
@@ -22,13 +87,14 @@
             <label>나이: <input type="number" name="age"/></label><br/>
             <button type="submit" class="btn primary">수정하기</button>
         </form>
+        <small>※ 이름/이메일/나이는 비밀번호 확인 없이 바로 변경됩니다.</small>
     </section>
 
     <section>
         <h2>비밀번호 변경</h2>
         <form id="pwForm">
-            <label>현재 비밀번호: <input type="password" name="currentPassword"/></label><br/>
-            <label>새 비밀번호: <input type="password" name="newPassword"/></label><br/>
+            <label>현재 비밀번호: <input type="password" name="currentPassword" required/></label><br/>
+            <label>새 비밀번호: <input type="password" name="newPassword" required/></label><br/>
             <button type="submit" class="btn primary">비밀번호 변경</button>
         </form>
     </section>
@@ -39,9 +105,7 @@
     </section>
 
     <script>
-        // 토큰 유틸(네 프로젝트에 이미 있다면 그걸 쓰면 됨)
         const token = (window.getToken && window.getToken()) || localStorage.getItem('token');
-
         function authHeaders(extra = {}) {
             return {
                 'Content-Type': 'application/json',
@@ -49,54 +113,95 @@
                 ...extra
             };
         }
+        function show(el){el.hidden=false}
+        function hide(el){el.hidden=true}
 
-        function loadProfile() {
-            fetch('/api/users/me', { headers: authHeaders() })
-                .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
-                .then(data => document.getElementById('profileArea').innerText = JSON.stringify(data, null, 2))
-                .catch(e => alert(e.message || '불러오기 실패'));
+        function renderProfile(p){
+            const initials = (p.name||p.username||'U').trim().slice(0,1).toUpperCase();
+            document.getElementById('pAvatar').textContent   = initials;
+            document.getElementById('pName').textContent     = p.name ?? '-';
+            document.getElementById('pUsername').textContent = p.username ? '@'+p.username : '@-';
+            document.getElementById('pEmail').textContent    = p.email ?? '-';
+            document.getElementById('pAge').textContent      = (p.age ?? '-') + (p.age ? '세' : '');
+            document.getElementById('pGender').textContent   = p.gender ?? '-';
         }
 
-        document.getElementById('updateForm').addEventListener('submit', e => {
+        async function loadProfile(){
+            const card = document.getElementById('profileCard');
+            const empty = document.getElementById('profileEmpty');
+            const skel = document.getElementById('profileSkeleton');
+
+            hide(card); hide(empty); show(skel);
+
+            try{
+                const res = await fetch('/api/users/me', { headers: authHeaders() });
+                if(!res.ok){
+                    const err = await res.json().catch(()=>({message:'불러오기 실패'}));
+                    throw new Error(err.message || '불러오기 실패');
+                }
+                const data = await res.json();
+                renderProfile(data);
+
+                hide(skel); hide(empty); show(card);
+            }catch(e){
+                hide(skel); show(empty);
+                alert(e.message || '불러오기 실패');
+            }
+        }
+
+        // === 프로필 수정(비번 확인 없음) ===
+        document.getElementById('updateForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = Object.fromEntries(new FormData(e.target).entries());
-            fetch('/api/users/me', {
-                method: 'PATCH',
-                headers: authHeaders(),
-                body: JSON.stringify(formData)
-            })
-                .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
-                .then(data => { alert('수정 완료'); loadProfile(); })
-                .catch(e => alert(e.message || '수정 실패'));
+            Object.keys(formData).forEach(k => { if (formData[k] === '') delete formData[k]; });
+
+            try{
+                const r = await fetch('/api/users/me', {
+                    method: 'PATCH',
+                    headers: authHeaders(),
+                    body: JSON.stringify(formData)
+                });
+                if(!r.ok){
+                    const err = await r.json().catch(()=>({message:'수정 실패'}));
+                    throw new Error(err.message || '수정 실패');
+                }
+                alert('수정 완료');
+                loadProfile();
+            }catch(e){ alert(e.message || '수정 실패'); }
         });
 
-        document.getElementById('pwForm').addEventListener('submit', e => {
+        // === 비밀번호 변경(현재 비번 필요) ===
+        document.getElementById('pwForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = Object.fromEntries(new FormData(e.target).entries());
-            fetch('/api/users/me/password', {
-                method: 'POST',
-                headers: authHeaders(),
-                body: JSON.stringify(formData)
-            })
-                .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
-                .then(data => alert(data.message || '비밀번호 변경 완료'))
-                .catch(e => alert(e.message || '비밀번호 변경 실패'));
+            try{
+                const r = await fetch('/api/users/me/password', {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: JSON.stringify(formData) // { currentPassword, newPassword }
+                });
+                const data = await r.json().catch(()=>({}));
+                if(!r.ok) throw new Error(data.message || '비밀번호 변경 실패');
+                alert(data.message || '비밀번호 변경 완료');
+            }catch(e){ alert(e.message || '비밀번호 변경 실패'); }
         });
 
-        function deleteAccount() {
+        // === 탈퇴 ===
+        async function deleteAccount(){
             if (!confirm('정말 탈퇴하시겠습니까?')) return;
-            fetch('/api/users/me', {
-                method: 'DELETE',
-                headers: authHeaders()
-            })
-                .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
-                .then(data => {
-                    alert(data.message || '탈퇴 완료');
-                    localStorage.removeItem('token');
-                    location.href = '/login';
-                })
-                .catch(e => alert(e.message || '탈퇴 실패'));
+            try{
+                const r = await fetch('/api/users/me', { method:'DELETE', headers: authHeaders() });
+                const data = await r.json().catch(()=>({}));
+                if(!r.ok) throw new Error(data.message || '탈퇴 실패');
+                alert(data.message || '탈퇴 완료');
+                localStorage.removeItem('token');
+                location.href = '/login';
+            }catch(e){ alert(e.message || '탈퇴 실패'); }
         }
+        window.deleteAccount = deleteAccount; // onclick에서 접근 가능하게
+
+        document.addEventListener('DOMContentLoaded', loadProfile);
     </script>
+
 </main>
 </html>

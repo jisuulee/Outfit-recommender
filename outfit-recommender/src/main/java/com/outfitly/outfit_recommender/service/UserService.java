@@ -31,6 +31,13 @@ public class UserService {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
 
+        // 비밀번호 일치 확인
+        if (!dto.getPassword().equals(dto.getPasswordConfirm()))
+            throw new IllegalArgumentException("비밀번호와 비밀번호 확인이 일치하지 않습니다.");
+
+        // 비밀번호 정책(8~20자, 대/소문자+숫자 중 2가지 이상)
+        validatePasswordPolicy(dto.getPassword());
+
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(dto.getPassword());
 
@@ -46,6 +53,19 @@ public class UserService {
 
         userRepository.save(user);
         return "회원가입 성공!";
+    }
+
+    // 비밀번호 정책
+    private void validatePasswordPolicy(String pw) {
+        if (pw.length() < 8 || pw.length() > 20)
+            throw new IllegalArgumentException("비밀번호는 8~20자로 설정하세요.");
+        int classes = 0;
+        if (pw.matches(".*[a-z].*")) classes++;
+        if (pw.matches(".*[A-Z].*")) classes++;
+        if (pw.matches(".*\\d.*"))   classes++;
+        if (pw.matches(".*[^a-zA-Z\\d].*")) classes++;
+        if (classes < 2)
+            throw new IllegalArgumentException("비밀번호는 대/소문자, 숫자, 특수문자 중 2가지 이상 조합을 권장합니다.");
     }
 
     // 로그인
