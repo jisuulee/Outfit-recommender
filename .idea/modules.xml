@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/outfit-recommender.iml" filepath="$PROJECT_DIR$/.idea/outfit-recommender.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/outfit-recommender.outfit-recommender.main.iml" filepath="$PROJECT_DIR$/.idea/modules/outfit-recommender.outfit-recommender.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/outfit-recommender.outfit-recommender.main~1.iml" filepath="$PROJECT_DIR$/.idea/modules/outfit-recommender.outfit-recommender.main~1.iml" />
     </modules>
   </component>
 </project>
