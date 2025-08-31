@@ -33,4 +33,8 @@ public class User {
     @Column(nullable=false)
     @Builder.Default
     private Role role = Role.USER;
+
+    @Column(name = "email_verified", nullable = false)
+    @Builder.Default
+    private Boolean emailVerified = Boolean.FALSE;
 }

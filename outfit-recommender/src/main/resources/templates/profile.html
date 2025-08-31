@@ -47,48 +47,338 @@
     </section>
 
     <style>
-        .row{display:flex;align-items:center;gap:6px;margin-bottom:10px}
-        .card{
-            border:1px solid #e5e7eb;border-radius:14px;padding:16px;
-            box-shadow:0 2px 10px rgba(0,0,0,.04);max-width:520px;background:#fff
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 10px
         }
-        .head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
-        .avatar{
-            width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-            background:#f3f4f6;font-weight:700;color:#374151
+
+        .card {
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, .04);
+            max-width: 520px;
+            background: #fff
         }
-        .title{font-size:1.1rem;font-weight:700}
-        .subtitle{color:#6b7280;font-size:.9rem}
-        .kv{list-style:none;padding:0;margin:10px 0 0}
-        .kv li{display:flex;justify-content:space-between;padding:8px 0;border-top:1px dashed #eee}
-        .kv .k{color:#6b7280}
-        .kv .v{color:#111827;font-weight:600}
-        .empty{color:#6b7280;margin-top:6px}
+
+        .head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f4f6;
+            font-weight: 700;
+            color: #374151
+        }
+
+        .title {
+            font-size: 1.1rem;
+            font-weight: 700
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: .9rem
+        }
+
+        .kv {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0 0
+        }
+
+        .kv li {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-top: 1px dashed #eee
+        }
+
+        .kv .k {
+            color: #6b7280
+        }
+
+        .kv .v {
+            color: #111827;
+            font-weight: 600
+        }
+
+        .empty {
+            color: #6b7280;
+            margin-top: 6px
+        }
+
         /* 스켈레톤 */
-        .skeleton .avatar,.skeleton .title,.skeleton .subtitle,.skeleton .kv .k,.skeleton .kv .v{
-            background:linear-gradient(90deg,#f3f4f6,#e5e7eb,#f3f4f6);
-            background-size:200% 100%;animation:shimmer 1.2s infinite
+        .skeleton .avatar, .skeleton .title, .skeleton .subtitle, .skeleton .kv .k, .skeleton .kv .v {
+            background: linear-gradient(90deg, #f3f4f6, #e5e7eb, #f3f4f6);
+            background-size: 200% 100%;
+            animation: shimmer 1.2s infinite
         }
-        .skeleton .avatar{border-radius:50%}
-        .skeleton .title{height:16px;width:160px;border-radius:8px}
-        .skeleton .subtitle{height:12px;width:110px;border-radius:6px;margin-top:6px}
-        .skeleton .kv li{border-top:1px dashed #f3f4f6}
-        .skeleton .kv .k,.skeleton .kv .v{height:12px;border-radius:6px;display:inline-block}
-        .skeleton .kv .k{width:60px}
-        .skeleton .kv .v{width:120px}
-        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+        .skeleton .avatar {
+            border-radius: 50%
+        }
+
+        .skeleton .title {
+            height: 16px;
+            width: 160px;
+            border-radius: 8px
+        }
+
+        .skeleton .subtitle {
+            height: 12px;
+            width: 110px;
+            border-radius: 6px;
+            margin-top: 6px
+        }
+
+        .skeleton .kv li {
+            border-top: 1px dashed #f3f4f6
+        }
+
+        .skeleton .kv .k, .skeleton .kv .v {
+            height: 12px;
+            border-radius: 6px;
+            display: inline-block
+        }
+
+        .skeleton .kv .k {
+            width: 60px
+        }
+
+        .skeleton .kv .v {
+            width: 120px
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0
+            }
+            100% {
+                background-position: -200% 0
+            }
+        }
     </style>
 
     <section>
         <h2>프로필 수정</h2>
+
         <form id="updateForm">
-            <label>이름: <input type="text" name="name"/></label><br/>
-            <label>이메일: <input type="email" name="email"/></label><br/>
-            <label>나이: <input type="number" name="age"/></label><br/>
+            <div class="row">
+                <label class="grow">이름
+                    <input type="text" name="name"/>
+                </label>
+            </div>
+
+            <div class="row">
+                <label class="grow">이메일
+                    <input type="email" name="email" id="newEmail"/>
+                </label>
+            </div>
+
+            <!-- 이메일 변경 인증 UI -->
+            <div class="row" id="emailVerifyRow">
+                <button type="button" id="btnSendCode" class="btn">인증코드 발송</button>
+                <input type="text" id="emailCode" placeholder="인증코드 6자리" maxlength="10" style="width:150px"/>
+                <button type="button" id="btnVerifyCode" class="btn">코드 확인</button>
+                <span id="emailVerifyStatus" class="hint">변경할 이메일로 코드를 보내 인증하세요.</span>
+            </div>
+
+            <div class="row">
+                <label class="grow">나이
+                    <input type="number" name="age"/>
+                </label>
+            </div>
+
             <button type="submit" class="btn primary">수정하기</button>
         </form>
-        <small>※ 이름/이메일/나이는 비밀번호 확인 없이 바로 변경됩니다.</small>
+
+        <small>
+            ※ 이메일을 바꾸려면, 변경할 이메일로 인증 코드를 받아 <b>코드 확인</b>을 먼저 완료해야 합니다.
+        </small>
     </section>
+
+    <style>
+        .row{display:flex;align-items:center;gap:8px;margin:10px 0}
+        .grow{flex:1}
+        .btn{padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;cursor:pointer}
+        .btn.primary{background:#4f46e5;border-color:#4f46e5;color:#fff}
+        .btn[disabled]{opacity:.5;cursor:not-allowed}
+        .hint{color:#6b7280;font-size:.9rem}
+        .ok{color:#16a34a}
+        .warn{color:#dc2626}
+    </style>
+
+    <script>
+        // --- 공통 헤더 함수는 기존 authHeaders() 사용 ---
+        // 상태 변수
+        let emailChange = {
+            verified: false,
+            targetEmail: null,     // 어떤 이메일에 대해 인증 성공했는지 기록
+            cooldownUntil: 0       // 발송 버튼 쿨다운 타임스탬프(ms)
+        };
+
+        const $newEmail   = document.getElementById('newEmail');
+        const $btnSend    = document.getElementById('btnSendCode');
+        const $btnVerify  = document.getElementById('btnVerifyCode');
+        const $codeInput  = document.getElementById('emailCode');
+        const $status     = document.getElementById('emailVerifyStatus');
+
+        // 입력이 바뀌면, 이전 인증 상태 무효화
+        $newEmail.addEventListener('input', () => {
+            if (emailChange.verified && $newEmail.value.trim().toLowerCase() !== (emailChange.targetEmail || '')) {
+                emailChange.verified = false;
+                emailChange.targetEmail = null;
+                $status.textContent = '변경할 이메일로 코드를 보내 인증하세요.';
+                $status.className = 'hint';
+                $codeInput.value = '';
+                $newEmail.removeAttribute('readonly');
+                $btnSend.disabled = false;
+                $btnVerify.disabled = false;
+            }
+        });
+
+        // 발송 버튼
+        $btnSend.addEventListener('click', async () => {
+            const email = ($newEmail.value || '').trim().toLowerCase();
+            if (!email) { alert('변경할 이메일을 입력하세요.'); return; }
+            if (Date.now() < emailChange.cooldownUntil) {
+                const sec = Math.ceil((emailChange.cooldownUntil - Date.now())/1000);
+                alert(`조금만 기다려 주세요. ${sec}초 후 다시 시도할 수 있어요.`);
+                return;
+            }
+            try {
+                const res = await fetch('/auth/email/send', {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ email, purpose: 'CHANGE_EMAIL' })
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(()=>({message:'발송 실패'}));
+                    throw new Error(err.message || '발송 실패');
+                }
+                $status.textContent = '인증 코드가 발송되었습니다. 메일함을 확인하고 코드를 입력하세요.';
+                $status.className = 'hint';
+                // 60초 쿨다운(백엔드 정책과 맞춰 조정 가능)
+                emailChange.cooldownUntil = Date.now() + 60*1000;
+                cooldownTick();
+            } catch(e) {
+                alert(e.message || '발송 실패');
+            }
+        });
+
+        // 쿨다운 표시
+        function cooldownTick() {
+            if (Date.now() >= emailChange.cooldownUntil) {
+                $btnSend.disabled = false;
+                $btnSend.textContent = '인증코드 발송';
+                return;
+            }
+            $btnSend.disabled = true;
+            const sec = Math.ceil((emailChange.cooldownUntil - Date.now())/1000);
+            $btnSend.textContent = `재발송(${sec}s)`;
+            requestAnimationFrame(cooldownTick);
+        }
+
+        // 코드 확인
+        $btnVerify.addEventListener('click', async () => {
+            const email = ($newEmail.value || '').trim().toLowerCase();
+            const code  = ($codeInput.value || '').trim();
+            if (!email) { alert('변경할 이메일을 입력하세요.'); return; }
+            if (!code)  { alert('인증코드를 입력하세요.'); return; }
+
+            try {
+                const res = await fetch('/auth/email/verify', {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ email, purpose: 'CHANGE_EMAIL', code })
+                });
+                const data = await res.json().catch(()=>({}));
+                if (!res.ok) throw new Error(data.message || '인증 실패');
+
+                // 성공 처리
+                emailChange.verified = true;
+                emailChange.targetEmail = email;
+                $status.textContent = '이메일 인증 완료! 이제 "수정하기"를 누르면 반영됩니다.';
+                $status.className = 'hint ok';
+                $newEmail.setAttribute('readonly', 'readonly'); // 사용자가 검증 후 이메일 바꾸면 혼란 → 잠금
+                $btnSend.disabled = true;
+                $btnVerify.disabled = true;
+                alert('인증 완료');
+            } catch(e) {
+                $status.textContent = e.message || '인증 실패';
+                $status.className = 'hint warn';
+                alert(e.message || '인증 실패');
+            }
+        });
+
+        // 기존 업데이트 submit 훅을 살짝 보강: 이메일 변경 시 인증 여부 확인
+        document.getElementById('updateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formEntries = new FormData(e.target);
+            const payload = Object.fromEntries(formEntries.entries());
+
+            // 빈 문자열 제거
+            Object.keys(payload).forEach(k => { if (payload[k] === '') delete payload[k]; });
+
+            // 이메일 변경 의사가 있을 때만 체크
+            const newEmail = ($newEmail.value || '').trim().toLowerCase();
+            if (newEmail) {
+                // 사용자가 이메일 입력했는데, 인증 성공 기록이 없거나 다른 이메일로 인증했다면 막기
+                if (!emailChange.verified || emailChange.targetEmail !== newEmail) {
+                    alert('이메일 변경을 적용하려면, 변경할 이메일로 인증을 먼저 완료하세요.');
+                    return;
+                }
+                // 서버에 보낼 이메일도 동일하게
+                payload.email = newEmail;
+            }
+
+            // 나이 숫자화(있다면)
+            if (payload.age !== undefined && payload.age !== '') {
+                payload.age = Number(payload.age);
+            }
+
+            try {
+                const r = await fetch('/api/users/me', {
+                    method: 'PATCH',
+                    headers: authHeaders(),
+                    body: JSON.stringify(payload)
+                });
+                const data = await r.json().catch(()=>({}));
+                if (!r.ok) throw new Error(data.message || '수정 실패');
+
+                alert('수정 완료');
+                e.target.reset();
+                // 성공 후 상태 초기화
+                if (newEmail) {
+                    emailChange = { verified: false, targetEmail: null, cooldownUntil: 0 };
+                    $newEmail.removeAttribute('readonly');
+                    $btnSend.disabled = false;
+                    $btnVerify.disabled = false;
+                    $btnSend.textContent = '인증코드 발송';
+                    $codeInput.value = '';
+                    $status.textContent = '변경할 이메일로 코드를 보내 인증하세요.';
+                    $status.className = 'hint';
+                }
+                // 최신 프로필 다시 불러오기(기존 함수 재사용)
+                if (typeof loadProfile === 'function') loadProfile();
+            } catch(e2) {
+                alert(e2.message || '수정 실패');
+            }
+        });
+    </script>
+
 
     <section>
         <h2>비밀번호 변경</h2>
@@ -106,98 +396,95 @@
 
     <script>
         const token = (window.getToken && window.getToken()) || localStorage.getItem('token');
+
         function authHeaders(extra = {}) {
             return {
                 'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+                ...(token ? {'Authorization': 'Bearer ' + token} : {}),
                 ...extra
             };
         }
-        function show(el){el.hidden=false}
-        function hide(el){el.hidden=true}
 
-        function renderProfile(p){
-            const initials = (p.name||p.username||'U').trim().slice(0,1).toUpperCase();
-            document.getElementById('pAvatar').textContent   = initials;
-            document.getElementById('pName').textContent     = p.name ?? '-';
-            document.getElementById('pUsername').textContent = p.username ? '@'+p.username : '@-';
-            document.getElementById('pEmail').textContent    = p.email ?? '-';
-            document.getElementById('pAge').textContent      = (p.age ?? '-') + (p.age ? '세' : '');
-            document.getElementById('pGender').textContent   = p.gender ?? '-';
+        function show(el) {
+            el.hidden = false
         }
 
-        async function loadProfile(){
+        function hide(el) {
+            el.hidden = true
+        }
+
+        function renderProfile(p) {
+            const initials = (p.name || p.username || 'U').trim().slice(0, 1).toUpperCase();
+            document.getElementById('pAvatar').textContent = initials;
+            document.getElementById('pName').textContent = p.name ?? '-';
+            document.getElementById('pUsername').textContent = p.username ? '@' + p.username : '@-';
+            document.getElementById('pEmail').textContent = p.email ?? '-';
+            document.getElementById('pAge').textContent = (p.age ?? '-') + (p.age ? '세' : '');
+            document.getElementById('pGender').textContent = p.gender ?? '-';
+        }
+
+        async function loadProfile() {
             const card = document.getElementById('profileCard');
             const empty = document.getElementById('profileEmpty');
             const skel = document.getElementById('profileSkeleton');
 
-            hide(card); hide(empty); show(skel);
+            hide(card);
+            hide(empty);
+            show(skel);
 
-            try{
-                const res = await fetch('/api/users/me', { headers: authHeaders() });
-                if(!res.ok){
-                    const err = await res.json().catch(()=>({message:'불러오기 실패'}));
+            try {
+                const res = await fetch('/api/users/me', {headers: authHeaders()});
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({message: '불러오기 실패'}));
                     throw new Error(err.message || '불러오기 실패');
                 }
                 const data = await res.json();
                 renderProfile(data);
 
-                hide(skel); hide(empty); show(card);
-            }catch(e){
-                hide(skel); show(empty);
+                hide(skel);
+                hide(empty);
+                show(card);
+            } catch (e) {
+                hide(skel);
+                show(empty);
                 alert(e.message || '불러오기 실패');
             }
         }
-
-        // === 프로필 수정(비번 확인 없음) ===
-        document.getElementById('updateForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = Object.fromEntries(new FormData(e.target).entries());
-            Object.keys(formData).forEach(k => { if (formData[k] === '') delete formData[k]; });
-
-            try{
-                const r = await fetch('/api/users/me', {
-                    method: 'PATCH',
-                    headers: authHeaders(),
-                    body: JSON.stringify(formData)
-                });
-                if(!r.ok){
-                    const err = await r.json().catch(()=>({message:'수정 실패'}));
-                    throw new Error(err.message || '수정 실패');
-                }
-                alert('수정 완료');
-                loadProfile();
-            }catch(e){ alert(e.message || '수정 실패'); }
-        });
 
         // === 비밀번호 변경(현재 비번 필요) ===
         document.getElementById('pwForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = Object.fromEntries(new FormData(e.target).entries());
-            try{
+            try {
                 const r = await fetch('/api/users/me/password', {
                     method: 'POST',
                     headers: authHeaders(),
                     body: JSON.stringify(formData) // { currentPassword, newPassword }
                 });
-                const data = await r.json().catch(()=>({}));
-                if(!r.ok) throw new Error(data.message || '비밀번호 변경 실패');
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok) throw new Error(data.message || '비밀번호 변경 실패');
                 alert(data.message || '비밀번호 변경 완료');
-            }catch(e){ alert(e.message || '비밀번호 변경 실패'); }
+                e.target.reset();
+            } catch (e) {
+                alert(e.message || '비밀번호 변경 실패');
+            }
         });
 
         // === 탈퇴 ===
-        async function deleteAccount(){
+        async function deleteAccount() {
             if (!confirm('정말 탈퇴하시겠습니까?')) return;
-            try{
-                const r = await fetch('/api/users/me', { method:'DELETE', headers: authHeaders() });
-                const data = await r.json().catch(()=>({}));
-                if(!r.ok) throw new Error(data.message || '탈퇴 실패');
+            try {
+                const r = await fetch('/api/users/me', {method: 'DELETE', headers: authHeaders()});
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok) throw new Error(data.message || '탈퇴 실패');
                 alert(data.message || '탈퇴 완료');
                 localStorage.removeItem('token');
                 location.href = '/login';
-            }catch(e){ alert(e.message || '탈퇴 실패'); }
+            } catch (e) {
+                alert(e.message || '탈퇴 실패');
+            }
         }
+
         window.deleteAccount = deleteAccount; // onclick에서 접근 가능하게
 
         document.addEventListener('DOMContentLoaded', loadProfile);
