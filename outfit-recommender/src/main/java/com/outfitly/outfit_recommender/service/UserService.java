@@ -141,6 +141,24 @@ public class UserService {
         userRepository.save(u);
     }
 
+    public String findUsernameByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .map(User::getUsername)
+                .orElse(null);
+    }
+
+    public void updatePasswordByEmail(String email, String newPlainPw) {
+        var user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("계정을 찾을 수 없습니다."));
+        // 비밀번호 정책 체크(있다면 재사용)
+        if (newPlainPw == null || newPlainPw.length() < 8) {
+            throw new IllegalArgumentException("비밀번호는 8자 이상이어야 합니다.");
+        }
+        user.setPassword(passwordEncoder.encode(newPlainPw));
+        userRepository.save(user);
+    }
+
+
     // 회원 탈퇴: 연관 데이터 정책 확인 필요
     public void deleteAccount(String username) {
         User u = userRepository.findByUsername(username)

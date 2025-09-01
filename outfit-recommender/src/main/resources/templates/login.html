@@ -10,7 +10,12 @@
         <label>아이디 <input name="username" required></label>
         <label>비밀번호 <input name="password" type="password" required></label>
         <button>로그인</button>
+
     </form>
+    <p>
+        <a th:href="@{/forgot-id}">아이디 찾기</a> |
+        <a th:href="@{/forgot-password}">비밀번호 찾기</a>
+    </p>
     <p><a th:href="@{/signup}">회원가입</a></p>
 
     <script>
@@ -19,10 +24,13 @@
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const fd = new FormData(form);
-                const body = JSON.stringify({ username: fd.get('username'), password: fd.get('password') });
+                const body = JSON.stringify({username: fd.get('username'), password: fd.get('password')});
 
-                const res = await window.api('/api/users/login', { method: 'POST', body });
-                if (!res.ok) { alert('로그인 실패'); return; }
+                const res = await window.api('/api/users/login', {method: 'POST', body});
+                if (!res.ok) {
+                    alert('로그인 실패');
+                    return;
+                }
                 const data = await res.json(); // { token, ... }
                 window.setToken(data.token);
                 location.href = '/';

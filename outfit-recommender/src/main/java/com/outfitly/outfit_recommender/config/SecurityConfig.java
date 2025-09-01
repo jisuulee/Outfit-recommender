@@ -55,6 +55,12 @@ public class SecurityConfig {
                         // 회원가입/로그인 API는 허용
                         .requestMatchers("/api/users/login", "/api/users/signup").permitAll()
 
+                        .requestMatchers(
+                                "/auth/email/**",       // 이미 쓰고 있는 이메일 인증
+                                "/auth/id/**",          // 아이디 찾기
+                                "/auth/password/**"     // 비번 재설정 플로우
+                        ).permitAll()
+
                         // 나머지 API는 인증 필요
                         .requestMatchers("/api/**").authenticated()
 

@@ -1,0 +1,77 @@
+<!-- templates/auth/find-id.html -->
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout (~{::title}, ~{::main})}">
+<head>
+    <title>아이디 찾기</title>
+    <meta charset="UTF-8"/>
+</head>
+
+<main th:fragment="main">
+    <h1>아이디 찾기</h1>
+
+    <form id="findIdForm" class="card" method="post" action="javascript:void(0);">
+        <label>가입 이메일
+            <input type="email" name="email" required>
+        </label>
+        <button type="submit">아이디 찾기</button>
+    </form>
+
+    <div id="result" style="margin-top:10px;color:green"></div>
+
+    <style>
+        main {
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            min-height:70vh; padding:20px;
+        }
+        h1 { margin-bottom:16px; }
+        form.card {
+            display:flex; align-items:center; gap:8px;
+            padding:16px; border:1px solid #e5e7eb; border-radius:12px; background:#fff;
+            box-shadow:0 2px 8px rgba(0,0,0,.05);
+        }
+        input[type="email"] {
+            padding:8px; border:1px solid #d1d5db; border-radius:6px; min-width:240px;
+        }
+        button {
+            padding:8px 12px; border:none; border-radius:6px; background:#4f46e5; color:#fff; cursor:pointer;
+        }
+        button:hover { background:#4338ca; }
+        #result { margin-top:16px; font-weight:600; }
+    </style>
+
+    <script>
+        const form = document.getElementById('findIdForm');
+        const result = document.getElementById('result');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            result.textContent = '';
+            const email = (e.target.email.value || '').trim();
+            if (!email) { alert('이메일을 입력하세요.'); return; }
+
+            try {
+                const res = await fetch('/auth/id/find', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                if (res.status === 404) {
+                    alert('해당 이메일의 계정을 찾을 수 없습니다.');
+                    return;
+                }
+
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.message || '아이디 찾기 실패');
+
+                result.textContent = '당신의 아이디는: ' + (data.username ?? '(알 수 없음)');
+                e.target.reset();
+            } catch (err) {
+                alert(err.message || '요청에 실패했습니다.');
+            }
+        });
+    </script>
+</main>
+</html>
